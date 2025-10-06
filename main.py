@@ -86,9 +86,9 @@ model.compile(loss='categorical_crossentropy',
 
 history = model.fit(datagen.flow(train_x, train_y, batch_size = 64),
                     steps_per_epoch = len(train_x) // 64,
-                    epochs = 50,
+                    epochs = 125,
                     validation_data= (X_valid, y_valid),
-                    verbose=1)
+                    verbose=0)
 
 pred = model.predict(test_x, verbose=0)
 
@@ -99,4 +99,4 @@ y_true = argmax(test_y, axis=1)
 
 print(classification_report(y_true, y_pred))
 
-model.save('cifar10_cnn.keras')
+model.save('cifar10_cnn_initial_model.keras')
