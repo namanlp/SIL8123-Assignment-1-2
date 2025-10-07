@@ -4,10 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-tensorflow = "*"
-matplotlib = "*"
-scikit-learn = "*"
-pandas = "*"
+adversarial-robustness-toolbox = "*"
 
 [dev-packages]
 
