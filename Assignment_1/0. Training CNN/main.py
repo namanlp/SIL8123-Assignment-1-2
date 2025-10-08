@@ -17,7 +17,6 @@ train_x = train_x.astype('float32')
 train_x = train_x / 255.0
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
 
 train_x, X_valid, train_y, y_valid = train_test_split(train_x, train_y, test_size=0.2)
 
@@ -97,6 +96,7 @@ from numpy import argmax
 y_pred = argmax(pred, axis=1)
 y_true = argmax(test_y, axis=1)
 
+from sklearn.metrics import classification_report
 print(classification_report(y_true, y_pred))
 
 model.save('cifar10_cnn_initial_model.keras')
