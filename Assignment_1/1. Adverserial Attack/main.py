@@ -1,30 +1,24 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # Remove TF XLA warnings
+from os import environ, makedirs, path
+environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # Remove TF XLA warnings
 import tensorflow as tf
 
 MODEL_PATH = '../cifar10_cnn_initial_model.keras'
 USE_SUBSET = 20
+NUM_CLASSES = 10
 
 model = tf.keras.models.load_model(MODEL_PATH)
-
-import matplotlib.pyplot as plt
 
 from art.estimators.classification import TensorFlowV2Classifier
 from art.attacks.evasion import NewtonFool
 loss_object = tf.keras.losses.CategoricalCrossentropy()
 
-# === User-editable parameters ===
-SAVE_DIR = "newtonfool_results"
-os.makedirs(SAVE_DIR, exist_ok=True)
-
 import numpy as np
 from tensorflow.keras.datasets import cifar10
-(_, _), (x_test, y_test_raw) = cifar10.load_data()
+(x_test, y_test_raw), (_,_) = cifar10.load_data()
 x_test = x_test.astype("float32") / 255.0
 x_test = x_test[:USE_SUBSET]
-num_classes = 10
 
-y_test = tf.keras.utils.to_categorical(y_test_raw, num_classes)
+y_test = tf.keras.utils.to_categorical(y_test_raw, NUM_CLASSES)
 y_test = y_test[:USE_SUBSET]
 y_test_raw = y_test_raw[:USE_SUBSET]
 
@@ -34,7 +28,7 @@ print("Using test set shape:", x_test.shape)
 clf = TensorFlowV2Classifier(
     model=model,
     loss_object=loss_object,
-    nb_classes=num_classes,
+    nb_classes=NUM_CLASSES,
     input_shape=x_test.shape[1:],
     clip_values=(0.0, 1.0),
 )
@@ -48,12 +42,11 @@ print(f"Clean accuracy on {len(x_test)} samples: {clean_acc*100:.2f}%")
 
 newton = NewtonFool(
     classifier=clf,
-    max_iter=5,         # iterations (increase for stronger attacks; slower)
-    eta=0.05,               # step size factor
+    max_iter=5,
+    eta=0.05,
 )
 
 # === Generate adversarial examples ===
-print("Generating NewtonFool adversarial examples (this can take time)...")
 x_adv = newton.generate(x=x_test)
 
 # === Evaluate adversarial accuracy ===
@@ -69,7 +62,11 @@ linf_norms = np.max(np.abs(perturbations), axis=1)
 print(f"L2 norms: mean={l2_norms.mean():.4f}, max={l2_norms.max():.4f}")
 print(f"L-inf norms: mean={linf_norms.mean():.4f}, max={linf_norms.max():.4f}")
 
-# === Save a few side-by-side example images ===
+import matplotlib.pyplot as plt
+# === Save images ===
+SAVE_DIR = "newton_fool_results"
+makedirs(SAVE_DIR, exist_ok=True)
+
 for i in range(USE_SUBSET):
     orig = np.clip((x_test[i] * 255.0), 0, 255).astype(np.uint8)
     adv = np.clip((x_adv[i] * 255.0), 0, 255).astype(np.uint8)
@@ -81,5 +78,5 @@ for i in range(USE_SUBSET):
     disp = ((diff - diff.min()) / (diff.max() - diff.min() + 1e-8) * 255).astype(np.uint8)
     axes[2].imshow(disp); axes[2].axis('off'); axes[2].set_title('scaled diff')
     plt.tight_layout()
-    plt.savefig(os.path.join(SAVE_DIR, f"newtonfool_idx{i}.png"))
+    plt.savefig(path.join(SAVE_DIR, f"newtonfool_idx{i}.png"))
     plt.close(fig)
